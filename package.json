@@ -1,0 +1,30 @@
+{
+  "name": "meu-projeto-back-end_03",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+"scripts": {
+    "dev": "tsx watch src/app.ts"
+    },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaka12-bit/Meu-Projeto-Back-End_03.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/kaka12-bit/Meu-Projeto-Back-End_03/issues"
+  },
+  "homepage": "https://github.com/kaka12-bit/Meu-Projeto-Back-End_03#readme",
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.2.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
