@@ -100,6 +100,32 @@ app.post("/player/damage", (req: Request, res: Response) => {
     });
 });
 
+// Jogador recuperar vida 
+app.post("/player/heal", (req: Request, res: Response) => {
+    const { amount } = req.body;
+
+    const healMessage = player1.heal(amount);
+    savePlayerState(player1);
+
+    res.json({
+        action: healMessage,
+        currentHealth: player1.health,
+        currentLevel: player1.level,
+    });
+});
+
+// Jogador sobe de nível 
+app.post("/player/levelup", (req: Request, res: Response) => {
+    const levelUpMessage = player1.levelUp();
+    savePlayerState(player1);
+
+    res.json({
+        action: levelUpMessage,
+        currentHealth: player1.health,
+        currentLevel: player1.level,
+    });
+});
+
 // Inicializa o servidor
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
@@ -107,4 +133,6 @@ app.listen(PORT, () => {
     console.log("GET /player - Obter informações do jogador");
     console.log("POST /player/attack - Jogador realiza um ataque");
     console.log("POST /player/damage - Jogador recebe dano");
+    console.log("POST /player/heal - Jogador recebe cura");
+    console.log("POST /player/levelup - Jogador sobe de nível");
 });
