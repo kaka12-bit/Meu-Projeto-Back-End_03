@@ -1,78 +1,110 @@
-// Importa a biblioteca Express e também o tipo Express
-// O Express será utilizado para criar o servidor web
+// Importa a biblioteca Express
 import express from "express";
 import type { Express, Request, Response } from "express";
-//importa a classe Player do arquivo Player.ts
-import { Player } from "./models/Player.js";
 
+import fs from "fs";
+// Importa a classe Player
+import { Player } from "./models/player.js";
 
 // Cria uma aplicação Express
-// A função express() devolve um objeto que representa o servidor da aplicação
 const app: Express = express();
 
-// Middleware para permitir que o servidor aceite requisições com corpo em formato JSON
+// Middleware para permitir que o servidor entenda JSON
 app.use(express.json());
 
-// Instanciação de um jogador ultilizando a classe Player
-// Criamos (instanciamos) um novo jogador chamado "Hero" com 100 de saúde e nível 1
-// Apartir da classe Playes que foi importada do arquivo Player.ts
-let player1: Player = new Player("Hero", 100, 5);
-
-// Rota GET para obter informações do jogador
-// Quando o cliente fizer uma requisição GET para a rota "/player", o servidor responderá com os dados do jogador
-// A função de callback recebe dois parâmetros: req (requisição) e res (resposta)
-app.get("/player", (req: Request, res: Response) => {
-    res.json({
-    message: "Informações do jogador",
-    player:player1,
-    }); 
-});
-//rota POST para atacar o jogador
-// Quando o cliente fizer uma requisição POST para a rota "/player/attack", o servidor chamará o método attack() do jogador
-// do jogador
-// É ultilizafa para enviar dados para o servidor, nesse caso, o ataque do jogador
-// como neste case, onde o jogador realiza uma ação (como acionar um comportamento de ataque)
-// que é o metodo attack() do Jogador.
-// A função de callback recebe dois parâmetros: req (requisição) e res (resposta)
-app.post("/player/attack", (req: Request, res: Response) => {
-  const attackMessage = player1.attack(); //chama o método attack() do jogador
-    // Retorna uma resposta JSON com a mensagem de ataque
-    // para o cliente que fez a requisição
-    res.json({
-    message: attackMessage,
-    });
-});
-
-// Rota para receber o dano 
-// Quando o usúario acessar a rota "/player/damage" com uma requisição POST, o servidor chamará o método takeDamage() do jogador
-// método takeDamage() do jogador, pasando o valor do dano recebido no corpo da requisição (req.body.amount).
-//parâmetro
-app.post("/player/damage", (req: Request, res: Response) => {
-    const { damage } = req.body;
-    const damageMessage = player1.takeDamage(damage);
-    // Retorna uma resposta JSON com a mensagem de dano
-    // para o cliente que fez a requisição
-    res.json({
-    // Retorna a mensagem do dano recebido
-    action: damageMessage,
-    // Retorna o valor da saúde atual do jogador
-    currentHealth: player1.health,
-    // Retorna o nível atual do jogador
-    currentLevel: player1.level,
-    });
-});
-
-
-// Define a porta onde o servidor ficará disponível
-// Neste caso, o servidor poderá ser acessado pela porta 8081
+// Define a porta do servidor
 const PORT: number = 8081;
 
-// Inicializa o servidor utilizando a porta definida
-// O método listen() faz o servidor começar a "escutar" requisições HTTP
+// Define o nome do diretório onde os arquivos serão armazenados
+const DATA_FILE = "./data/players.json";
+
+/*
+Função para garantir que o diretório de dados exista antes de salvar os arquivos.
+Se o diretório não existir, ele será criado
+*/
+function ensureDataFolderExists() {
+    const dataFolder = "./data";
+    if (!fs.existsSync(dataFolder)) {
+        fs.mkdirSync(dataFolder);
+    }
+}
+
+// Chamar a função para garantir que o diretório de dados exista
+// antes de qualquer operação de leitura ou escrita de arquivos
+ensureDataFolderExists();
+
+// Função para salvar os dados do player em um arquivo JSON
+function savePlayerState(player: Player) {
+    // Converte o objeto player em uma string JSON
+    const data = JSON.stringify(player, null, 2);
+    // Salva a string JSON no arquivo definido em DATA_FILE
+    fs.writeFileSync(DATA_FILE, data, "utf-8");
+}
+
+// Função para carregar os dados do player de um arquivo JSON
+function loadPLayerState(): Player {
+    // Verifica se oo arquivo de dados existe
+    if (fs.existsSync(DATA_FILE)) { 
+    // Lê o conteúdo do arquivo e converte de volta para um objeto Player
+    const data = fs.readFileSync(DATA_FILE, "utf-8");
+    const playerData = JSON.parse(data);
+
+    /* ATENÇÃO: JSON.parse() retorna um objeto "puro" (sem os métodos da classe Player)
+    Para que o objeto tenha os métodos da classe Player, precisamos criar uma nova instância da
+    classe Player e passar os dados carregados para o construtor.
+    */
+    return new Player(playerData.name, playerData.health, playerData.level);
+    }
+    // Cria um novo jogador se não existir chamado "Hero"
+    // Nome: Hero | Vida: 100 | Nível: 5
+    const newPlayer: Player = new Player("Hero", 100, 5);
+    savePlayerState(newPlayer);
+    return newPlayer;
+}
+// Inicializa o player carregando seu estado do arquivo JSON
+let player1: Player = loadPLayerState();
+
+
+// GET
+// Quando o usuário acessa /player,
+// o servidor retorna os dados do jogador
+app.get("/player", (req: Request, res: Response) => {
+    res.json({
+        message: "Informações do Player",
+        player: player1,
+    });
+});
+
+// POST
+// Faz o jogador atacar
+app.post("/player/attack", (req: Request, res: Response) => {
+    const attackMessage = player1.attack();
+
+    res.json({
+        message: attackMessage,
+    });
+});
+
+// POST
+// Faz o jogador receber dano
+app.post("/player/damage", (req: Request, res: Response) => {
+    const { damage } = req.body;
+
+    const damageMessage = player1.takeDamage(damage);
+    // Salvar o estado atual do player no arquivo JSON
+    savePlayerState(player1);
+    res.json({
+        action: damageMessage,
+        currentHealth: player1.health,
+        currentLevel: player1.level,
+    });
+});
+
+// Inicializa o servidor
 app.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
-    console.log("Rotas disponiveis:");
-    console.log(`GET http://localhost:${PORT}/player - Obter informações do jogador`);
-    console.log(`POST http://localhost:${PORT}/ player/attack - Jogador realiza um ataque`);
-    console.log(`POST http://localhost:${PORT}/player/take-damage - Joagdor recebe dano`);
-    });
+    console.log("Rotas disponíveis:");
+    console.log("GET /player - Obter informações do jogador");
+    console.log("POST /player/attack - Jogador realiza um ataque");
+    console.log("POST /player/damage - Jogador recebe dano");
+});
